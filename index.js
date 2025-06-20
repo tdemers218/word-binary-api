@@ -24,7 +24,7 @@ app.post('/api/convert', (req, res) => {
 
   const matches = data.filter(entry => entry.code === code || entry.opposite === code).map(e => e.word);
 
-  res.json({ matches });
+  res.json({ data, matches });
 });
 
 const PORT = process.env.PORT || 3000;
