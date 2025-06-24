@@ -16,24 +16,37 @@ const loadDictionary = lang => {
 };
 
 // Analyze binary codes for most differing letter position(s)
-const findMostDifferentPositions = codes => {
-  if (codes.length < 2) return [];
-  const length = codes[0].length;
-  const counts = Array.from({ length }, () => ({ '0': 0, '1': 0 }));
+const findMostInformativePosition = words => {
+  if (words.length < 2) return [];
 
-  for (const code of codes) {
-    for (let i = 0; i < length; i++) {
-      const bit = code[i];
-      counts[i][bit] = (counts[i][bit] || 0) + 1;
+  const length = Math.min(...words.map(w => w.length));
+  let bestPosition = -1;
+  let bestScore = Infinity;
+
+  for (let i = 0; i < length; i++) {
+    const counts = {};
+
+    // Count frequency of each letter at position i
+    for (const word of words) {
+      const letter = word[i];
+      counts[letter] = (counts[letter] || 0) + 1;
+    }
+
+    // Compute expected size of remaining group if we knew this letter
+    const total = words.length;
+    const expectedSize = Object.values(counts)
+      .map(count => (count / total) * count)  // probability * group size
+      .reduce((sum, val) => sum + val, 0);
+
+    if (expectedSize < bestScore) {
+      bestScore = expectedSize;
+      bestPosition = i;
     }
   }
 
-  const maxDisagreements = Math.max(...counts.map(c => Math.min(c['0'] || 0, c['1'] || 0)));
-  return counts
-    .map((c, i) => ({ i, disagreement: Math.min(c['0'] || 0, c['1'] || 0) }))
-    .filter(c => c.disagreement === maxDisagreements)
-    .map(c => c.i);
+  return [bestPosition];
 };
+
 
 app.post('/api/convert', (req, res) => {
   let { words, code, lang } = req.body;
@@ -65,7 +78,7 @@ app.post('/api/convert', (req, res) => {
   const result = { matches, count: matches.length };
 
   if (matches.length > 1) {
-    result.different_positions = findMostDifferentPositions(matchCodes);
+    result.best_position = findMostInformativePosition(matches);
   }
 
   res.json(result);
