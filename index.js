@@ -16,36 +16,28 @@ const loadDictionary = lang => {
 };
 
 // Analyze binary codes for most differing letter position(s)
-const findMostInformativePosition = words => {
+const findMostUniqueLetterPosition = words => {
   if (words.length < 2) return [];
 
-  const length = Math.min(...words.map(w => w.length));
-  let bestPosition = -1;
-  let bestScore = Infinity;
+  const minLength = Math.min(...words.map(w => w.length));
+  let bestPos = -1;
+  let maxUniqueLetters = -1;
 
-  for (let i = 0; i < length; i++) {
-    const counts = {};
-
-    // Count frequency of each letter at position i
+  for (let i = 0; i < minLength; i++) {
+    const seen = new Set();
     for (const word of words) {
-      const letter = word[i];
-      counts[letter] = (counts[letter] || 0) + 1;
+      seen.add(word[i]);
     }
 
-    // Compute expected size of remaining group if we knew this letter
-    const total = words.length;
-    const expectedSize = Object.values(counts)
-      .map(count => (count / total) * count)  // probability * group size
-      .reduce((sum, val) => sum + val, 0);
-
-    if (expectedSize < bestScore) {
-      bestScore = expectedSize;
-      bestPosition = i;
+    if (seen.size > maxUniqueLetters) {
+      maxUniqueLetters = seen.size;
+      bestPos = i;
     }
   }
 
-  return [bestPosition];
+  return [bestPos + 1]; // convert to 1-based indexing
 };
+
 
 
 app.post('/api/convert', (req, res) => {
@@ -78,7 +70,7 @@ app.post('/api/convert', (req, res) => {
   const result = { matches, count: matches.length };
 
   if (matches.length > 1) {
-    result.best_position = findMostInformativePosition(matches);
+    result.best_position = findMostUniqueLetterPosition(matches);
   }
 
   res.json(result);
