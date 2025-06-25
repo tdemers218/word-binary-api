@@ -47,12 +47,35 @@ app.post('/api/convert', (req, res) => {
     return res.status(400).json({ error: "Missing 'code'" });
   }
 
+  let wordList = [];
+
+  if (words) {
+    wordList = normalizeWords(words);
+  } else {
+    const langCode = lang === 'fr' ? 'french' : 'english';
+    try {
+      wordList = require(`./dictionaries/${langCode}.json`);
+    } catch (e) {
+      return res.status(500).json({ error: "Failed to load language dictionary." });
+    }
+  }
+
   let data;
 
   if (words) {
     // Normalize and remove accents
-    words = words.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const wordList = [...new Set(words.match(/[a-z]+/g) || [])];
+    const normalizeWords = str => {
+      return [...new Set(
+        str
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "") // remove accents
+          .match(/[a-z]+/g) || [] // only letters
+      )];
+    };
+
+    const wordList = words ? normalizeWords(words) : [];
+
 
     data = wordList.map(word => {
       const binary = toBinary(word);
