@@ -3,6 +3,17 @@ const fs = require('fs');
 const app = express();
 app.use(express.json());
 
+// Utility to clean up a raw string of words
+function normalizeWords(input) {
+  return [...new Set(
+    input
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")     // remove accents
+      .match(/[a-z]+/g) || []              // keep only words
+  )];
+}
+
 // Vowel check
 const isVowel = c => "aeiouy".includes(c);
 
